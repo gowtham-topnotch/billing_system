@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Billing Page – Invoice #{{ bill.id }}</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+
+  <body class="bg-white py-10 flex justify-center min-h-screen">
+    <div class="w-[90%] max-w-5xl text-gray-800">
+      <!-- Header -->
+      <h1 class="text-center text-xl font-semibold mb-6">Billing Page</h1>
+
+      <!-- Customer Section -->
+      <div class="grid grid-cols-12 mb-8 text-sm">
+        <div class="col-span-2 font-medium">Customer Email:</div>
+        <div class="col-span-10">{{ bill.customer_email }}</div>
+      </div>
+
+      <!-- Bill Section Title -->
+      <div class="grid grid-cols-12 mb-2 text-sm">
+        <div class="col-span-2 font-medium">Bill section</div>
+        <div class="col-span-10"></div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="border mb-8">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-gray-100 text-center">
+              <th class="border px-2 py-2">Product ID</th>
+              <th class="border px-2 py-2">Unit Price</th>
+              <th class="border px-2 py-2">Quantity</th>
+              <th class="border px-2 py-2">Purchase Price</th>
+              <th class="border px-2 py-2">Tax % for Item</th>
+              <th class="border px-2 py-2">Tax payable<br />for Item</th>
+              <th class="border px-2 py-2">Total price<br />of the Item</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for it in bill.items.all %}
+            <tr class="text-center">
+              <td class="border px-2 py-2">{{ it.product.product_id }}</td>
+              <td class="border px-2 py-2">{{ it.unit_price }}</td>
+              <td class="border px-2 py-2">{{ it.quantity }}</td>
+              <td class="border px-2 py-2">{{ it.purchase_price }}</td>
+              <td class="border px-2 py-2">{{ it.tax_percent }}</td>
+              <td class="border px-2 py-2">{{ it.tax_amt_item }}</td>
+              <td class="border px-2 py-2">{{ it.line_total }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary Section -->
+      <div class="w-full text-sm leading-7 mb-10">
+        <div class="flex justify-end">
+          <table class="text-right">
+            <tr>
+              <td class="pr-6">Total price without tax:</td>
+              <td>{{ bill.total_before_tax }}</td>
+            </tr>
+            <tr>
+              <td class="pr-6">Total tax payable:</td>
+              <td>{{ bill.total_tax }}</td>
+            </tr>
+            <tr>
+              <td class="pr-6">Net price of the purchased items:</td>
+              <td>{{ bill.total_amount }}</td>
+            </tr>
+            <tr>
+              <td class="pr-6">
+                Rounded down value of purchased items net price:
+              </td>
+              <td>{{ bill.rounded_amount }}</td>
+            </tr>
+            <tr class="font-semibold">
+              <td class="pr-6">Balance payable to the customer:</td>
+              <td>{{ bill.change_amount }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <hr class="border-gray-300 my-12" />
+
+      <!-- Balance Denomination -->
+      <div class="text-right text-sm mb-4 font-medium">
+        Balance Denomination:
+      </div>
+
+      <div class="flex text-right justify-end text-sm">
+        <table>
+          {% for k,v in bill.change_denominations.items %}
+          <tr>
+            <td class="pr-10">{{ k }}:</td>
+            <td>{{ v }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td>No change breakdown available.</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      {% if bill.metadata.change_remainder_unable_to_dispense > 0 %}
+      <p class="text-center text-orange-600 mt-4 text-sm">
+        Unable to dispense exact change. Remaining: {{
+        bill.metadata.change_remainder_unable_to_dispense }}
+      </p>
+      {% endif %}
+    </div>
+  </body>
+</html>

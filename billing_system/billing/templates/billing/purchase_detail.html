@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head><title>Bill #{{ bill.id }}</title></head>
+<body>
+  <h1>Bill #{{ bill.id }}</h1>
+  <p>Customer: {{ bill.customer_email }}</p>
+  <p>Total: {{ bill.total_amount }}</p>
+  <table border="1">
+    <tr><th>Product</th><th>Qty</th><th>Line total</th></tr>
+    {% for it in bill.items.all %}
+      <tr><td>{{ it.product.name }}</td><td>{{ it.quantity }}</td><td>{{ it.line_total }}</td></tr>
+    {% endfor %}
+  </table>
+  <p><a href="{% url 'billing:billing_page' %}">Back to billing</a></p>
+</body>
+</html>

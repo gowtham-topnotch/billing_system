@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head><title>Purchases</title></head>
+<body>
+  <h1>Purchases for {{ email }}</h1>
+  <form method="get">
+    <input name="email" placeholder="customer email" value="{{ email }}" />
+    <button>Search</button>
+  </form>
+  <ul>
+    {% for b in bills %}
+      <li><a href="{% url 'billing:purchase_detail' b.id %}">Bill #{{ b.id }} - {{ b.created_at }} - {{ b.total_amount }}</a></li>
+    {% empty %}
+      <li>No purchases</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
