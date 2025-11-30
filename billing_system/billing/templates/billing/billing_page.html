@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Billing Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <script>
+      function addRow() {
+        const container = document.getElementById("item-rows");
+
+        const row = document.createElement("div");
+        row.className = "grid grid-cols-2 gap-4 relative";
+
+        row.innerHTML = `
+      <input
+        name="product_id[]"
+        placeholder="Product ID or Name"
+        class="border rounded px-3 py-2 w-full"
+        required
+      />
+
+      <div class="flex items-center gap-2">
+        <input
+          name="quantity[]"
+          type="number"
+          min="1"
+          value="1"
+          class="border rounded px-3 py-2 w-full"
+          required
+        />
+        <button type="button" class="text-red-500 font-medium hover:text-red-700 text-sm px-2" onclick="removeRow(this)">
+          ✕
+        </button>
+      </div>
+    `;
+
+        container.appendChild(row);
+
+        // apply fuzzy dropdown on the newly added field
+        const productInput = row.querySelector('input[name="product_id[]"]');
+        createFuzzyDropdown(productInput);
+      }
+    </script>
+    {% if clear_rows %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("item-rows").innerHTML = "";
+        addRow();
+      });
+    </script>
+    {% endif %}
+  </head>
+
+  <body class="bg-gray-100 min-h-screen py-10 flex justify-center px-4">
+    <div class="bg-white border rounded-xl shadow p-8 w-full max-w-4xl">
+      <h1 class="text-center text-2xl font-semibold mb-8">Billing Page</h1>
+
+      {% if error %}
+      <p class="text-red-600 mb-4">{{ error }}</p>
+      {% endif %}
+
+      <form method="post" , autocomplete="off">
+        {% csrf_token %}
+
+        <!-- Customer Email -->
+        <div class="mb-8">
+          <label class="font-medium text-gray-700">Customer Email</label>
+          <input
+            type="email"
+            name="customer_email"
+            placeholder="Email ID"
+            class="border rounded px-3 py-2 w-64 ml-4"
+            required
+          />
+        </div>
+
+        <!-- Bill Section -->
+        <div class="flex items-center justify-between mb-4">
+          <span class="font-medium text-gray-700 text-lg">Bill section</span>
+
+          <button
+            type="button"
+            onclick="addRow()"
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+          >
+            Add New
+          </button>
+        </div>
+
+        <!-- Product Rows + Denominations -->
+        <div class="grid gap-10 border-t pt-8">
+          <!-- LEFT: Product Rows -->
+          <div>
+            <div id="item-rows" class="space-y-4">
+              <!-- Default ONE Row -->
+
+              <div class="grid grid-cols-2 gap-4">
+                <input
+                  name="product_id[]"
+                  placeholder="Product ID [eg. P001]"
+                  class="border rounded px-3 py-2 w-full"
+                  required
+                />
+
+                <input
+                  name="quantity[]"
+                  type="number"
+                  min="1"
+                  value="1"
+                  class="border rounded px-3 py-2 w-full"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Denominations -->
+          <div>
+            <h3 class="font-medium mb-4 text-gray-700">Denominations</h3>
+
+            <div class="space-y-3">
+              {% for d in denominations %}
+              <div class="grid grid-cols-2 gap-4 items-center">
+                <span class="text-gray-700">{{ d.value }}</span>
+                <input
+                  name="denom_{{ d.value }}"
+                  type="number"
+                  value="{{ d.count }}"
+                  class="border rounded px-3 py-2"
+                  disabled
+                />
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Cash Paid -->
+        <div class="mt-10">
+          <label class="font-medium text-gray-700">Cash paid by customer</label>
+          <input
+            type="number"
+            name="paid_amount"
+            placeholder="Amount"
+            step="0.01"
+            class="border rounded px-3 py-2 w-64 ml-4"
+            required
+          />
+        </div>
+
+        <!-- Buttons -->
+        <div class="mt-10 flex justify-end gap-4">
+          <button
+            type="button"
+            class="px-6 py-2 border rounded text-gray-600 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Generate Bill
+          </button>
+        </div>
+      </form>
+    </div>
+  </body>
+  <script>
+    const PRODUCTS = [
+      {% for p in products %}
+        { id: "{{ p.product_id }}", name: "{{ p.name }}" },
+      {% endfor %}
+    ];
+
+    function createFuzzyDropdown(inputEl) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "relative w-full";
+
+      const dropdown = document.createElement("div");
+      dropdown.className =
+        "absolute z-20 bg-white border rounded shadow max-h-40 overflow-y-auto hidden";
+
+      wrapper.appendChild(inputEl.cloneNode(true));
+      wrapper.appendChild(dropdown);
+      inputEl.replaceWith(wrapper);
+
+      const field = wrapper.querySelector("input");
+
+      field.addEventListener("input", () => {
+        const term = field.value.toLowerCase();
+        dropdown.innerHTML = "";
+
+        if (!term) {
+          dropdown.classList.add("hidden");
+          return;
+        }
+
+        const filtered = PRODUCTS.filter(
+          p =>
+            p.id.toLowerCase().includes(term) ||
+            p.name.toLowerCase().includes(term)
+        );
+
+        filtered.forEach(p => {
+          const opt = document.createElement("div");
+          opt.className =
+            "px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm";
+          opt.textContent = `${p.id} — ${p.name}`;
+
+          opt.onclick = () => {
+            field.value = p.id;
+            dropdown.classList.add("hidden");
+          };
+
+          dropdown.appendChild(opt);
+        });
+
+        dropdown.classList.remove("hidden");
+      });
+
+      document.addEventListener("click", e => {
+        if (!wrapper.contains(e.target)) dropdown.classList.add("hidden");
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('input[name="product_id[]"]').forEach(el => {
+        createFuzzyDropdown(el);
+      });
+    });
+  </script>
+</html>
